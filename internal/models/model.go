@@ -14,3 +14,9 @@ type HealthResponse struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
 }
+
+type MongoDBConfig struct {
+	MongoURI       string
+	DatabaseName   string
+	CollectionName string
+}
