@@ -8,7 +8,7 @@ import (
 
 func LoadMongoConfig() models.MongoDBConfig {
 	return models.MongoDBConfig{
-		MongoURI:       getEnv("MONGO_URI", "mongodb://localhost:27017"),
+		MongoURI:       getEnv("MONGO_URI", "mongodb+srv://admin:Awb3WeJjFvMOKpMB@cluster0.b2v96.mongodb.net/TicketDB"),
 		DatabaseName:   getEnv("DATABASE_NAME", "TicketDB"),
 		CollectionName: getEnv("COLLECTION_NAME", "tickets"),
 	}

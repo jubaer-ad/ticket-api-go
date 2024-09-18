@@ -40,3 +40,11 @@ func GetTickets() ([]bson.M, error) {
 	return results, nil
 
 }
+
+func CreateTicket(ticket models.Ticket) (*mongo.InsertOneResult, error) {
+	rsp, err := collection.InsertOne(context.Background(), ticket)
+	if err != nil {
+		return nil, err
+	}
+	return rsp, nil
+}
