@@ -1,0 +1,50 @@
+info:
+  contact: {}
+paths:
+  /api/tickets:
+    get:
+      consumes:
+      - application/json
+      description: Get all tickets
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Get all tickets
+          schema:
+            type: string
+      summary: Get all tickets
+      tags:
+      - tickets
+    post:
+      consumes:
+      - application/json
+      description: Creates a new ticket.
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Ticket created
+          schema:
+            type: string
+      summary: Create a new ticket
+      tags:
+      - tickets
+  /health:
+    get:
+      description: Responds with a simple message for all method requests.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: GET request accepted
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Server Health Check
+      tags:
+      - health
+swagger: "2.0"
