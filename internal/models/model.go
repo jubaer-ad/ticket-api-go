@@ -1,20 +1,24 @@
 package models
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"time"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 // Ticket represents a Ticket in the system.
 // swagger:model Ticket
 type Ticket struct {
-	Id          primitive.ObjectID `json:"id" bson:"_id"`
-	Title       string             `json:"title"`
-	Description string             `json:"description"`
-	Category    string             `json:"category"`
-	Priority    int                `json:"priority"`
-	Progress    int                `json:"progress"`
-	Status      string             `json:"status"`
-	Active      bool               `json:"active"`
+	Id          bson.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Title       string        `json:"title"`
+	Description string        `json:"description"`
+	Category    string        `json:"category"`
+	Priority    int           `json:"priority"`
+	Progress    int           `json:"progress"`
+	Status      string        `json:"status"`
+	Active      bool          `json:"active"`
+	CreatedAt   *time.Time    `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
+	UpdatedAt   *time.Time    `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
 }
 
 // HealthResponse represents the health check response.

@@ -3,10 +3,11 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/ticket-go/internal/database"
 	"github.com/ticket-go/internal/models"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
@@ -76,6 +77,38 @@ func getTicketsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+// @Summary Get a ticket by ID
+// @Description Get a ticket by its ID
+// @Tags tickets
+// @Produce json
+// @Param id path string true "Ticket ID"
+// @Success 200 {object} models.Ticket "Success"
+// @Failure 404 {string} string "Ticket not found"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /api/tickets/{id} [get]
+func getTicketHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Path[len("/api/tickets/"):]
+	objectID, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	ticket, err := database.GetTicketByID(objectID)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if ticket == nil {
+		http.Error(w, "Ticket not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ticket)
+}
+
 // @Summary Create a new ticket
 // @Description Creates a new ticket.
 // @Tags tickets
@@ -96,15 +129,18 @@ func createTicketHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	now := time.Now()
+	ticket.CreatedAt = &now
+
 	dbRsp, err = database.CreateTicket(ticket)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	rsp := struct {
-		ID primitive.ObjectID `josn:"id"`
+		ID bson.ObjectID `josn:"id"`
 	}{
-		ID: dbRsp.InsertedID.(primitive.ObjectID),
+		ID: dbRsp.InsertedID.(bson.ObjectID),
 	}
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(rsp)
@@ -126,7 +162,7 @@ func deleteTicketHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	idStr := r.URL.Path[len("/api/tickets/"):]
-	objID, err := primitive.ObjectIDFromHex(idStr)
+	objID, err := bson.ObjectIDFromHex(idStr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -170,7 +206,7 @@ func updateTicketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idStr := r.URL.Path[len("/api/tickets/"):]
-	objID, err := primitive.ObjectIDFromHex(idStr)
+	objID, err := bson.ObjectIDFromHex(idStr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -182,6 +218,9 @@ func updateTicketHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+
+	now := time.Now()
+	updateData.UpdatedAt = &now
 
 	result, err := database.UpdateTicketById(objID, updateData)
 	if err != nil {
@@ -199,36 +238,4 @@ func updateTicketHandler(w http.ResponseWriter, r *http.Request) {
 		Message: "Ticket updated successfully",
 	}
 	json.NewEncoder(w).Encode(rsp)
-}
-
-// @Summary Get a ticket by ID
-// @Description Get a ticket by its ID
-// @Tags tickets
-// @Produce json
-// @Param id path string true "Ticket ID"
-// @Success 200 {object} models.Ticket "Success"
-// @Failure 404 {string} string "Ticket not found"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /api/tickets/{id} [get]
-func getTicketHandler(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Path[len("/api/tickets/"):]
-	objectID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	ticket, err := database.GetTicketByID(objectID)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	if ticket == nil {
-		http.Error(w, "Ticket not found", http.StatusNotFound)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ticket)
 }

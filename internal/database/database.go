@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/ticket-go/internal/models"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -42,7 +41,7 @@ func GetTickets() ([]bson.M, error) {
 
 }
 
-func GetTicketByID(id primitive.ObjectID) (*models.Ticket, error) {
+func GetTicketByID(id bson.ObjectID) (*models.Ticket, error) {
 	var ticket models.Ticket
 	err := collection.FindOne(context.Background(), bson.M{"_id": id}).Decode(&ticket)
 	if err != nil {
@@ -63,7 +62,7 @@ func CreateTicket(ticket models.Ticket) (*mongo.InsertOneResult, error) {
 	return rsp, nil
 }
 
-func DeleteTicketByID(id primitive.ObjectID) (*mongo.DeleteResult, error) {
+func DeleteTicketByID(id bson.ObjectID) (*mongo.DeleteResult, error) {
 	filter := bson.M{"_id": id}
 	result, err := collection.DeleteOne(context.Background(), filter, options.Delete())
 	if err != nil {
@@ -72,7 +71,7 @@ func DeleteTicketByID(id primitive.ObjectID) (*mongo.DeleteResult, error) {
 	return result, nil
 }
 
-func UpdateTicketById(id primitive.ObjectID, updateData models.Ticket) (*mongo.UpdateResult, error) {
+func UpdateTicketById(id bson.ObjectID, updateData models.Ticket) (*mongo.UpdateResult, error) {
 	update := bson.M{
 		"$set": bson.M{
 			"title":       updateData.Title,
@@ -82,6 +81,7 @@ func UpdateTicketById(id primitive.ObjectID, updateData models.Ticket) (*mongo.U
 			"Progress":    updateData.Progress,
 			"status":      updateData.Status,
 			"active":      updateData.Active,
+			"updatedAt":   updateData.UpdatedAt,
 		},
 	}
 
