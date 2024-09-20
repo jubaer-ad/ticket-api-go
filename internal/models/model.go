@@ -1,5 +1,7 @@
 package models
 
+// Ticket represents a Ticket in the system.
+// swagger:model Ticket
 type Ticket struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
@@ -10,6 +12,8 @@ type Ticket struct {
 	Active      bool   `json:"active"`
 }
 
+// HealthResponse represents thr health check response.
+// swagger:model HealthResponse
 type HealthResponse struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`

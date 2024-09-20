@@ -30,9 +30,12 @@ const docTemplate = `{
                 "summary": "Get all tickets",
                 "responses": {
                     "200": {
-                        "description": "Get all tickets",
+                        "description": "Ok",
                         "schema": {
-                            "type": "string"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Ticket"
+                            }
                         }
                     }
                 }
@@ -49,6 +52,17 @@ const docTemplate = `{
                     "tickets"
                 ],
                 "summary": "Create a new ticket",
+                "parameters": [
+                    {
+                        "description": "Ticket object",
+                        "name": "ticket",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Ticket"
+                        }
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Ticket created",
@@ -71,9 +85,9 @@ const docTemplate = `{
                 "summary": "Server Health Check",
                 "responses": {
                     "200": {
-                        "description": "GET request accepted",
+                        "description": "Ok",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.HealthResponse"
                         }
                     },
                     "500": {
@@ -82,6 +96,45 @@ const docTemplate = `{
                             "type": "string"
                         }
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.HealthResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Ticket": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "progress": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         }

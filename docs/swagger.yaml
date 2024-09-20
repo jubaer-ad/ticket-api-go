@@ -1,3 +1,28 @@
+definitions:
+  models.HealthResponse:
+    properties:
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+  models.Ticket:
+    properties:
+      active:
+        type: boolean
+      category:
+        type: string
+      description:
+        type: string
+      priority:
+        type: integer
+      progress:
+        type: integer
+      status:
+        type: string
+      title:
+        type: string
+    type: object
 info:
   contact: {}
 paths:
@@ -10,9 +35,11 @@ paths:
       - application/json
       responses:
         "200":
-          description: Get all tickets
+          description: Ok
           schema:
-            type: string
+            items:
+              $ref: '#/definitions/models.Ticket'
+            type: array
       summary: Get all tickets
       tags:
       - tickets
@@ -20,6 +47,13 @@ paths:
       consumes:
       - application/json
       description: Creates a new ticket.
+      parameters:
+      - description: Ticket object
+        in: body
+        name: ticket
+        required: true
+        schema:
+          $ref: '#/definitions/models.Ticket'
       produces:
       - application/json
       responses:
@@ -37,9 +71,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: GET request accepted
+          description: Ok
           schema:
-            type: string
+            $ref: '#/definitions/models.HealthResponse'
         "500":
           description: Internal Server Error
           schema:

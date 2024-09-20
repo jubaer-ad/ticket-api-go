@@ -14,7 +14,7 @@ import (
 // @Description Responds with a simple message for all method requests.
 // @Tags health
 // @Produce json
-// @Success 200 {string} string "GET request accepted"
+// @Success 200 {object} models.HealthResponse "Ok"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /health [get]
 func Health(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +47,7 @@ func TicketsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags tickets
 // @Accept json
 // @Produce json
-// @Success 200 {string} string "Get all tickets"
+// @Success 200 {array} models.Ticket "Ok"
 // @Router /api/tickets [get]
 func getTicketsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -73,6 +73,7 @@ func getTicketsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags tickets
 // @Accept json
 // @Produce json
+// @Param ticket body models.Ticket true "Ticket object"
 // @Success 201 {string} string "Ticket created"
 // @Router /api/tickets [post]
 func createTicketHandler(w http.ResponseWriter, r *http.Request) {
