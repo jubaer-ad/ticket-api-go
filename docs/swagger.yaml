@@ -14,6 +14,8 @@ definitions:
         type: string
       description:
         type: string
+      id:
+        type: string
       priority:
         type: integer
       progress:
@@ -62,6 +64,101 @@ paths:
           schema:
             type: string
       summary: Create a new ticket
+      tags:
+      - tickets
+  /api/tickets/{id}:
+    delete:
+      description: Deletes a ticket from the MongoDB collection by BSON ID
+      parameters:
+      - description: Ticket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ticket deleted
+          schema:
+            type: string
+        "400":
+          description: Invalid ID format
+          schema:
+            type: string
+        "404":
+          description: Ticket not found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete a ticket by ID
+      tags:
+      - tickets
+    get:
+      description: Get a ticket by its ID
+      parameters:
+      - description: Ticket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/models.Ticket'
+        "404":
+          description: Ticket not found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get a ticket by ID
+      tags:
+      - tickets
+    put:
+      consumes:
+      - application/json
+      description: Updates a ticket in the MongoDB collection by its ID.
+      parameters:
+      - description: Ticket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated Ticket object
+        in: body
+        name: ticket
+        required: true
+        schema:
+          $ref: '#/definitions/models.Ticket'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ticket updated
+          schema:
+            type: string
+        "400":
+          description: Invalid ID format or bad request
+          schema:
+            type: string
+        "404":
+          description: Ticket not found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update a ticket by ID
       tags:
       - tickets
   /health:

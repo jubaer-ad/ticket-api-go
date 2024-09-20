@@ -33,9 +33,17 @@ func Health(w http.ResponseWriter, r *http.Request) {
 func TicketsHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		getTicketsHandler(w, r)
+		if r.URL.Path == "/api/tickets" {
+			getTicketsHandler(w, r)
+		} else {
+			getTicketHandler(w, r)
+		}
 	case http.MethodPost:
 		createTicketHandler(w, r)
+	case http.MethodDelete:
+		deleteTicketHandler(w, r)
+	case http.MethodPut, http.MethodPatch:
+		updateTicketHandler(w, r)
 	default:
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
@@ -100,4 +108,127 @@ func createTicketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(rsp)
+}
+
+// @Summary Delete a ticket by ID
+// @Description Deletes a ticket from the MongoDB collection by BSON ID
+// @Tags tickets
+// @Produce json
+// @Param id path string true "Ticket ID"
+// @Success 200 {string} string "Ticket deleted"
+// @Failure 400 {string} string "Invalid ID format"
+// @Failure 404 {string} string "Ticket not found"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /api/tickets/{id} [delete]
+func deleteTicketHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	idStr := r.URL.Path[len("/api/tickets/"):]
+	objID, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	result, err := database.DeleteTicketByID(objID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if result.DeletedCount == 0 {
+		http.Error(w, "Ticket not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	rsp := models.SuccessResponse{
+		Message: "Ticket deleted successfully",
+	}
+	json.NewEncoder(w).Encode(rsp)
+}
+
+// @Summary Update a ticket by ID
+// @Description Updates a ticket in the MongoDB collection by its ID.
+// @Tags tickets
+// @Accept json
+// @Produce json
+// @Param id path string true "Ticket ID"
+// @Param ticket body models.Ticket true "Updated Ticket object"
+// @Success 200 {string} string "Ticket updated"
+// @Failure 400 {string} string "Invalid ID format or bad request"
+// @Failure 404 {string} string "Ticket not found"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /api/tickets/{id} [put]
+func updateTicketHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut && r.Method != http.MethodPatch {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	idStr := r.URL.Path[len("/api/tickets/"):]
+	objID, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var updateData models.Ticket
+	err = json.NewDecoder(r.Body).Decode(&updateData)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	result, err := database.UpdateTicketById(objID, updateData)
+	if err != nil {
+		http.Error(w, "Error updating ticket", http.StatusInternalServerError)
+		return
+	}
+
+	if result.MatchedCount == 0 {
+		http.Error(w, "Ticket not found", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	rsp := models.SuccessResponse{
+		Message: "Ticket updated successfully",
+	}
+	json.NewEncoder(w).Encode(rsp)
+}
+
+// @Summary Get a ticket by ID
+// @Description Get a ticket by its ID
+// @Tags tickets
+// @Produce json
+// @Param id path string true "Ticket ID"
+// @Success 200 {object} models.Ticket "Success"
+// @Failure 404 {string} string "Ticket not found"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /api/tickets/{id} [get]
+func getTicketHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Path[len("/api/tickets/"):]
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	ticket, err := database.GetTicketByID(objectID)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if ticket == nil {
+		http.Error(w, "Ticket not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ticket)
 }

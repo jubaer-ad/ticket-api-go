@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/ticket-go/internal/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -41,10 +42,52 @@ func GetTickets() ([]bson.M, error) {
 
 }
 
+func GetTicketByID(id primitive.ObjectID) (*models.Ticket, error) {
+	var ticket models.Ticket
+	err := collection.FindOne(context.Background(), bson.M{"_id": id}).Decode(&ticket)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil // Ticket not found
+		}
+		return nil, err
+	}
+
+	return &ticket, nil
+}
+
 func CreateTicket(ticket models.Ticket) (*mongo.InsertOneResult, error) {
 	rsp, err := collection.InsertOne(context.Background(), ticket)
 	if err != nil {
 		return nil, err
 	}
 	return rsp, nil
+}
+
+func DeleteTicketByID(id primitive.ObjectID) (*mongo.DeleteResult, error) {
+	filter := bson.M{"_id": id}
+	result, err := collection.DeleteOne(context.Background(), filter, options.Delete())
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func UpdateTicketById(id primitive.ObjectID, updateData models.Ticket) (*mongo.UpdateResult, error) {
+	update := bson.M{
+		"$set": bson.M{
+			"title":       updateData.Title,
+			"description": updateData.Description,
+			"category":    updateData.Category,
+			"Priority":    updateData.Priority,
+			"Progress":    updateData.Progress,
+			"status":      updateData.Status,
+			"active":      updateData.Active,
+		},
+	}
+
+	result, err := collection.UpdateByID(context.Background(), id, update)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

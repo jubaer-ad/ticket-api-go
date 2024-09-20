@@ -15,6 +15,7 @@ func NewRouter() http.Handler {
 	mux.HandleFunc("/health", handler.Health)
 
 	mux.HandleFunc("/api/tickets", handler.TicketsHandler)
+	mux.HandleFunc("/api/tickets/{id}", handler.TicketsHandler)
 
 	return mux
 }
