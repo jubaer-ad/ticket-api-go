@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/ticket-go/internal/database"
@@ -68,24 +69,27 @@ func getTicketsHandler(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	ticketsChan, errChan := database.GetTickets(ctx)
+	var once sync.Once
+
 	go func() {
 		select {
 		case tickets := <-ticketsChan:
-			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(tickets); err != nil {
-				http.Error(w, "Error encoding response", http.StatusInternalServerError)
-				break
-			}
-			return
+			once.Do(func() {
+				w.Header().Set("Content-Type", "application/json")
+				if err := json.NewEncoder(w).Encode(tickets); err != nil {
+					http.Error(w, "Error encoding response", http.StatusInternalServerError)
+				}
+			})
 		case err := <-errChan:
-			if err != nil {
-				http.Error(w, "Error fetching data", http.StatusInternalServerError)
-				break
-			}
-			return
+			once.Do(func() {
+				if err != nil {
+					http.Error(w, "Error fetching data", http.StatusInternalServerError)
+				}
+			})
 		case <-ctx.Done():
-			http.Error(w, "Request timed out", http.StatusRequestTimeout)
-			break
+			once.Do(func() {
+				http.Error(w, "Request timed out", http.StatusRequestTimeout)
+			})
 		}
 	}()
 }
