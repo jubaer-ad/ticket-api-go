@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -63,18 +64,30 @@ func getTicketsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	data, err := database.GetTickets()
-	if err != nil {
-		http.Error(w, "Error fetching data", http.StatusInternalServerError)
-		return
-	}
-	response, err := json.Marshal(data)
-	if err != nil {
-		http.Error(w, "Error marshalling data", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(response)
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	ticketsChan, errChan := database.GetTickets(ctx)
+	go func() {
+		select {
+		case tickets := <-ticketsChan:
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(tickets); err != nil {
+				http.Error(w, "Error encoding response", http.StatusInternalServerError)
+				break
+			}
+			return
+		case err := <-errChan:
+			if err != nil {
+				http.Error(w, "Error fetching data", http.StatusInternalServerError)
+				break
+			}
+			return
+		case <-ctx.Done():
+			http.Error(w, "Request timed out", http.StatusRequestTimeout)
+			break
+		}
+	}()
 }
 
 // @Summary Get a ticket by ID

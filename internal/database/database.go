@@ -2,7 +2,9 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/ticket-go/internal/models"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -14,30 +16,45 @@ var client *mongo.Client
 var collection *mongo.Collection
 
 func ConnectDB(cfg models.MongoDBConfig) {
-	var err error
 	clientOptionsBuilder := options.Client().ApplyURI(cfg.MongoURI)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	var err error
 	client, err = mongo.Connect(clientOptionsBuilder)
 	if err != nil {
 		log.Fatalf("Failed to connect to mongo: %v", err)
 	}
-	err = client.Ping(context.Background(), nil)
+	err = client.Ping(ctx, nil)
 	if err != nil {
 		log.Fatalf("Failed to ping MongoDB: %v", err)
 	}
 	collection = client.Database(cfg.DatabaseName).Collection(cfg.CollectionName)
 }
 
-func GetTickets() ([]bson.M, error) {
-	var results []bson.M
-	cursor, err := collection.Find(context.Background(), bson.D{})
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(context.Background())
-	if err = cursor.All(context.Background(), &results); err != nil {
-		return nil, err
-	}
-	return results, nil
+func GetTickets(ctx context.Context) (<-chan []bson.M, <-chan error) {
+	ticketsChan := make(chan []bson.M, 1)
+	errChan := make(chan error, 1)
+
+	go func() {
+		defer close(ticketsChan)
+		defer close(errChan)
+
+		var results []bson.M
+		cursor, err := collection.Find(context.Background(), bson.D{})
+		if err != nil {
+			errChan <- fmt.Errorf("failed to fetch tickets: %v", err)
+			return
+		}
+		defer cursor.Close(ctx)
+
+		if err = cursor.All(ctx, &results); err != nil {
+			errChan <- fmt.Errorf("failed to decode tickets: %v", err)
+			return
+		}
+		ticketsChan <- results
+	}()
+
+	return ticketsChan, errChan
 
 }
 
